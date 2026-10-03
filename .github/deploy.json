@@ -1,0 +1,8 @@
+{
+  "exclude": [
+    "README.md",
+    "LICENSE",
+    ".gitignore",
+    ".gitattributes"
+  ]
+}
