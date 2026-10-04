@@ -37,16 +37,14 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
           STATUS: ${{ job.status }}
           SUMMARY: ${{ runner.temp }}/deploy-summary.json
-          SITE: https://alba-rosa.cz/icon-studio/
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          COMMIT_URL: ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}
+          SHA: ${{ github.sha }}
           COMMIT_MSG: ${{ github.event.head_commit.message }}
           ACTOR: ${{ github.actor }}
           REPO: ${{ github.repository }}
         run: |
           [ -n "$DISCORD_WEBHOOK" ] || exit 0
           python3 - <<'PY'
-          import json, os, urllib.request
+          import json, os, time, urllib.error, urllib.request
           ok = os.environ["STATUS"] == "success"
           s = {}
           try:
@@ -54,22 +52,19 @@ jobs:
           except Exception:
               pass
           msg = (os.environ.get("COMMIT_MSG") or "ruční spuštění").splitlines()[0][:200]
-          lines = [f"[`{os.environ['COMMIT_URL'][-40:][:7]}`]({os.environ['COMMIT_URL']}) {msg} — {os.environ['ACTOR']}"]
+          lines = [f"`{os.environ['SHA'][:7]}` {msg} — {os.environ['ACTOR']}"]
           if s:
               lines.append(f"Nahráno {s.get('uploaded', 0)}, smazáno {s.get('deleted', 0)}")
-          lines.append(f"🌐 {os.environ['SITE']}  ·  [log]({os.environ['RUN_URL']})")
           body = {
               "username": "Deploy",
               "embeds": [{
-                  "title": ("✅ Nahráno: " if ok else "❌ Nasazení selhalo: ") + os.environ["REPO"].split("/")[1],
-                  "url": os.environ["RUN_URL"],
+                  "title": ("✅ " if ok else "❌ ") + os.environ["REPO"].split("/")[1],
                   "description": "\n".join(lines),
                   "color": 0x2ECC71 if ok else 0xE74C3C,
               }],
           }
           req = urllib.request.Request(os.environ["DISCORD_WEBHOOK"], json.dumps(body).encode(),
                                        {"Content-Type": "application/json", "User-Agent": "deploy"})
-          import time, urllib.error
           for attempt in range(5):
               try:
                   urllib.request.urlopen(req, timeout=20)
