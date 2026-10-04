@@ -51,10 +51,10 @@ jobs:
               s = json.load(open(os.environ["SUMMARY"]))
           except Exception:
               pass
-          msg = (os.environ.get("COMMIT_MSG") or "ruční spuštění").splitlines()[0][:200]
+          msg = (os.environ.get("COMMIT_MSG") or "manual run").splitlines()[0][:200]
           lines = [f"`{os.environ['SHA'][:7]}` {msg} — {os.environ['ACTOR']}"]
           if s:
-              lines.append(f"Nahráno {s.get('uploaded', 0)}, smazáno {s.get('deleted', 0)}")
+              lines.append(f"Uploaded {s.get('uploaded', 0)}, deleted {s.get('deleted', 0)}")
           body = {
               "username": "Deploy",
               "embeds": [{
